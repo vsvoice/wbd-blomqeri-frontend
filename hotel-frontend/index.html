@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>What is my IP?</title>
+  <title>Boka rum</title>
   <style>
 
   </style>
@@ -12,7 +12,26 @@
   <h3>Boka rum</h3>
   <div id="rooms-id"></div>
 
+  <label for="room-select">Välj ett rum:</label> <br>
+  <select name="room-select" id="room-select">
+  </select> <br><br>
+
+  <label for="booking-start">Startdatum:</label> <br>
+  <input type="date" id="booking-start" name="booking-start"> <br><br>
+
+  <label for="booking-other">Ytterligare information:</label> <br>
+  <input type="text" id="booking-other" name="booking-other"> <br><br>
+
+  <input type="button" id="booking-submit" value="Skicka"> <br><br>
+
+  <h4>Alla befintliga bokningar</h4>
+  <ul id="bookings-list">
+
+  </ul>
+
   <script>
+    document.getElementById("booking-submit").addEventListener("click", bookRoom);
+
     //const apiURL = "https://wdb-blomqeri-webbkommunikation-och-databaser.2.rahtiapp.fi/api/ip";
     const apiURL = "http://localhost:8080/rooms";
     async function getRooms() {
@@ -20,14 +39,50 @@
       const rooms = await res.json();
       
       for (room of rooms) {
-        document.getElementById("rooms-id").innerHTML += `
-          <li>${room.number} – Våning: ${room.floor} – Sängar: ${room.beds} st</li>
+        document.getElementById("room-select").innerHTML += `
+          <option value="${room.id}">${room.room_number} - ${room.type} (${room.price} €)</option>
         `
       }
 
       console.log(rooms);
     } 
     getRooms();
+
+    async function bookRoom() {
+      const bookingData = {
+      "room_id": document.getElementById("room-select").value,
+      "guest_id": 1, 
+      "datefrom": document.getElementById("booking-start").value, 
+      "dateto": document.getElementById("booking-start").value,
+      "addinfo": document.getElementById("booking-other").value,
+      };
+
+        const res = await fetch("http://localhost:8080/bookings", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json', // Specify the content type
+        },
+        body: JSON.stringify(bookingData), // Convert the data to JSON format
+      });
+
+      const result = await res.json(); // Parse the JSON response
+      console.log(result);
+      return result;
+    } 
+;
+    async function getBookings() {
+      const res = await fetch("http://localhost:8080/all_bookings");
+      const bookings = await res.json();
+      
+      for (booking of bookings) {
+        document.getElementById("bookings-list").innerHTML += `
+          <li>${booking.room_number} - ${booking.datefrom}</li>
+        `
+      }
+
+      console.log(bookings);
+    } 
+    getBookings();
   </script>
 
 </body>
