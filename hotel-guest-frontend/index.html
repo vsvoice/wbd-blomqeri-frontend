@@ -12,9 +12,7 @@
   <h3>Boka rum (gästens verktyg)</h3>
   <div id="rooms-id"></div>
 
-  <label for="guest-select">Välj gäst:</label> <br>
-  <select name="guest-select" id="guest-select">
-  </select> <br><br>
+  Gäst: <span id="guest-name"></span><br><br>
   
   <label for="room-select">Välj ett rum:</label> <br>
   <select name="room-select" id="room-select">
@@ -28,7 +26,7 @@
 
   <input type="button" id="booking-submit" value="Skicka"> <br><br>
 
-  <h4>Alla befintliga bokningar</h4>
+  <h4>Alla tidigare bokningar</h4>
   <ul id="bookings-list">
 
   </ul>
@@ -37,9 +35,9 @@
     document.getElementById("booking-submit").addEventListener("click", bookRoom);
 
     // TEMP flytta till LocalStorage eller liknande
-    const API_KEY = "407972aeda058f5aeb66d2f60c76e0396f2dce5a1afc832bbc8b52bc605a955b";
+    const API_KEY = "cba77f309f099c525d772fdb873323a385c3d144d13b9a68930878d58366da0f";
 
-    async function getCurrentGuest() {
+    /*async function getCurrentGuest() {
       const res = await fetch("http://localhost:8080/current_guest", {
         headers: {'x-API-Key': API_KEY}
       });
@@ -48,7 +46,7 @@
 
       console.log(guest);
     } 
-    getCurrentGuest();
+    getCurrentGuest();*/
 
     //const apiURL = "https://wdb-blomqeri-webbkommunikation-och-databaser.2.rahtiapp.fi/api/ip";
     const apiURL = "http://localhost:8080/rooms";
@@ -69,16 +67,16 @@
     async function bookRoom() {
       const bookingData = {
       "room_id": document.getElementById("room-select").value,
-      "guest_id": document.getElementById("guest-select").value, 
       "datefrom": document.getElementById("booking-start").value, 
       "dateto": document.getElementById("booking-start").value,
       "addinfo": document.getElementById("booking-other").value,
       };
 
-        const res = await fetch("http://localhost:8080/bookings", {
+      const res = await fetch("http://localhost:8080/bookings", {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json', // Specify the content type
+          'X-API-Key': API_KEY
         },
         body: JSON.stringify(bookingData), // Convert the data to JSON format
       });
@@ -88,19 +86,46 @@
       return result;
     } 
 ;
+
+    // Hämta aktuell gästs bokningar
     async function getBookings() {
-      const res = await fetch("http://localhost:8080/bookings");
+      const res = await fetch("http://localhost:8080/bookings", {
+        headers: {'X-API-Key': API_KEY}
+      });
       const bookings = await res.json();
       
       for (booking of bookings) {
         document.getElementById("bookings-list").innerHTML += `
-          <li>${booking.room_number} - ${booking.datefrom} - ${booking.dateto} - ${booking.firstname} ${booking.lastname} - ${booking.booked_nights} nätter, totalt: ${booking.total_price} €</li>
+          <li>
+            ${booking.room_number} - ${booking.datefrom} - ${booking.dateto} - ${booking.firstname} ${booking.lastname} - ${booking.booked_nights} nätter, totalt: ${booking.total_price} €
+            <select id="stars-${booking.id}" onchange="rateBooking(${booking.id}, this.value)">
+              <option value="" disabled ${booking.stars == null ? 'selected' : ''}>Betygsätt ditt besök</option>
+              <option value="5" ${booking.stars == 5 ? 'selected' : ''}>⭐⭐⭐⭐⭐</option>
+              <option value="4" ${booking.stars == 4 ? 'selected' : ''}>⭐⭐⭐⭐</option>
+              <option value="3" ${booking.stars == 3 ? 'selected' : ''}>⭐⭐⭐</option>
+              <option value="2" ${booking.stars == 2 ? 'selected' : ''}>⭐⭐</option>
+              <option value="1" ${booking.stars == 1 ? 'selected' : ''}>⭐</option>
+            </select>
+          </li>
         `
       }
+
+      document.getElementById("guest-name").innerHTML += `${bookings[0].firstname} ${bookings[0].lastname}`;
 
       console.log(bookings);
     } 
     getBookings();
+
+    async function rateBooking(bookingId, rating) {
+      const res = await fetch(`http://localhost:8080/bookings/${bookingId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json', // Specify the content type
+          'X-API-Key': API_KEY
+        },
+        body: JSON.stringify({rating: rating}), // Convert the data to JSON format
+      });
+    }
 
   </script>
 
